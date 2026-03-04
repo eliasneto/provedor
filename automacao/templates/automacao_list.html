@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Automações | Ageis{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="color: #2d3436; margin: 0;">Módulo de Automação</h2>
+    <a href="/admin/automacao/automacao/add/" style="background: var(--primary-yellow); color: #000; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+        <i class="fas fa-plus"></i> Registrar Nova Automação
+    </a>
+</div>
+
+<div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #2d3436; color: var(--primary-yellow);">
+                <th style="padding: 15px;">Nome da Tarefa</th>
+                <th style="padding: 15px;">Planilha (Excel)</th>
+                <th style="padding: 15px;">Status</th>
+                <th style="padding: 15px; text-align: center;">Ações de Controle</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in automacoes %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 15px;">
+                    <div style="font-weight: 600; color: #2d3436;">{{ a.nome }}</div>
+                    <small style="color: #b2bec3;">Cod: {{ a.slug_script }}</small>
+                </td>
+                <td style="padding: 15px;">
+                    {% if a.planilha %}
+                        <span style="color: #2d3436; font-size: 0.85rem;"><i class="fas fa-file-excel" style="color: #1f7244;"></i> {{ a.planilha.name|truncatechars:20 }}</span>
+                    {% endif %}
+                    <form action="{% url 'upload_planilha' a.id %}" method="post" enctype="multipart/form-data" style="display: inline-block; margin-left: 10px;">
+                        {% csrf_token %}
+                        <input type="file" name="planilha" onchange="this.form.submit()" style="display: none;" id="file-{{a.id}}">
+                        <label for="file-{{a.id}}" style="cursor: pointer; color: #0984e3; font-size: 0.8rem;">
+                            <i class="fas fa-upload"></i> {% if a.planilha %}Trocar{% else %}Anexar{% endif %}
+                        </label>
+                    </form>
+                </td>
+                <td style="padding: 15px;">
+                    <span style="padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+                        {% if a.status == 'executando' %} background: #e3f2fd; color: #1976d2; 
+                        {% elif a.status == 'concluido' %} background: #e3fcef; color: #00b894;
+                        {% elif a.status == 'parado' %} background: #fff3e0; color: #f57c00;
+                        {% else %} background: #eee; color: #636e72; {% endif %}">
+                        {{ a.get_status_display }}
+                    </span>
+                </td>
+                <td style="padding: 15px; text-align: center;">
+                    {% if a.status == 'executando' %}
+                        <a href="{% url 'parar_automacao' a.id %}" title="Parar Agora" style="color: #d63031; font-size: 1.2rem; margin-right: 15px;"><i class="fas fa-stop-circle"></i></a>
+                    {% else %}
+                        {% if a.planilha %}
+                            <a href="{% url 'iniciar_automacao' a.id %}" title="Executar Script" style="color: #00b894; font-size: 1.2rem; margin-right: 15px;"><i class="fas fa-play-circle"></i></a>
+                        {% else %}
+                            <i class="fas fa-play-circle" style="color: #ccc; font-size: 1.2rem; margin-right: 15px;" title="Anexe uma planilha primeiro"></i>
+                        {% endif %}
+                    {% endif %}
+                    <a href="/admin/automacao/automacao/{{a.id}}/change/" style="color: #636e72;"><i class="fas fa-cog"></i></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="padding: 30px; text-align: center; color: #b2bec3;">Nenhuma automação registrada no sistema.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ageis Sistemas{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-yellow: #FFD700;
+            --dark-sidebar: #121212;
+            --dark-item: #1e1e1e;
+            --text-light: #f4f4f4;
+            --bg-content: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-content);
+            overflow: hidden;
+        }
+
+        /* Menu Lateral */
+        .sidebar {
+            width: 260px;
+            background-color: var(--dark-sidebar);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid var(--primary-yellow);
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-header i {
+            font-size: 3rem;
+            color: var(--primary-yellow);
+            margin-bottom: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: #b2bec3;
+            text-decoration: none;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+        .sidebar-menu li a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Classe de destaque para página atual */
+        .sidebar-menu li a:hover, .active-link {
+            background-color: var(--dark-item);
+            color: var(--primary-yellow) !important;
+            border-left: 4px solid var(--primary-yellow);
+        }
+
+        /* Área de Conteúdo */
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .top-nav {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .content-body {
+            padding: 30px;
+        }
+
+        .user-info { font-weight: 600; font-size: 0.9rem; color: #2d3436; }
+
+        /* Botão de Logout Estilizado */
+        .logout-form {
+            padding: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff7675;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            transition: 0.3s;
+            font-weight: 500;
+            border-radius: 5px;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(214, 48, 49, 0.1);
+            color: #d63031;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-tower-broadcast"></i>
+            <div style="font-weight: 800; font-size: 1.2rem; letter-spacing: 1px;">AGEIS SISTEMAS</div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li>
+                <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'listar_provedores' %}" class="{% if request.resolver_match.url_name == 'listar_provedores' %}active-link{% endif %}">
+                    <i class="fas fa-network-wired"></i> Provedores
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'listar_automacoes' %}" class="{% if request.resolver_match.url_name == 'automacao' %}active-link{% endif %}">
+                    <i class="fas fa-robot"></i> Automação
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-form">
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Sair do Sistema
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="main-container">
+        {% if user.is_authenticated %}
+        <div class="top-nav">
+            <div class="user-info">
+                <i class="fas fa-circle" style="color: #55efc4; font-size: 0.7rem; margin-right: 5px;"></i>
+                Olá, {{ user.username|upper }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="content-body">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Ageis Sistemas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-yellow: #FFD700;
+            --dark-gray: #2d3436;
+            --bg-dark: #121212;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-top: 8px solid var(--primary-yellow);
+        }
+
+        .logo-area {
+            color: var(--dark-gray);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            color: var(--primary-yellow);
+            background: var(--dark-gray);
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+        }
+
+        .brand-name { font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary-yellow); }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-yellow);
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover { background: #e6c200; transform: scale(1.02); }
+
+        .error-msg { color: #e74c3c; font-size: 0.8rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo-area">
+            <div class="logo-icon">
+                <i class="fas fa-tower-broadcast"></i> </div>
+            <div class="brand-name">AGEIS SISTEMAS</div>
+            <small>Gerência de Provedores</small>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Usuário" required>
+            <input type="password" name="password" placeholder="Senha" required>
+            <button type="submit" class="btn-login">ENTRAR NO SISTEMA</button>
+        </form>
+
+        {% if form.errors %}
+            <p class="error-msg text-center">Acesso negado. Verifique os dados.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
