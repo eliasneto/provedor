@@ -1,71 +1,69 @@
-import time
-import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
+"""automacao/tasks.py
 
-from .models import Automacao
-from provedor.models import Provedor
+Este arquivo só faz o *carregamento automático* das automações.
 
-def automacao_google_provedores(tarefa_id, file_path):
-    # Configuração do Navegador (Headless para rodar no seu Ubuntu/Docker)
-    chrome_options = Options()
-    # chrome_options.add_argument("--headless") # Descomente para rodar sem abrir a janela
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    
-    try:
-        df = pd.read_excel(file_path)
-        tarefa = Automacao.objects.get(id=tarefa_id)
+Para adicionar uma automação nova:
+1) Crie um arquivo dentro de `automacao/automacoes/`, por exemplo `minha_automacao.py`.
+2) No arquivo, crie uma função com assinatura (tarefa_id, file_path).
+3) Exponha um dicionário REGISTRY, por exemplo:
 
-        for index, row in df.iterrows():
-            # Verificação de interrupção manual
-            tarefa.refresh_from_db()
-            if tarefa.status != 'executando':
-                break
+    def minha_automacao(tarefa_id, file_path):
+        ...
 
-            nome_pesquisa = row['nome']
-            print(f"Pesquisando: {nome_pesquisa}")
+    REGISTRY = {
+        "minha_automacao": minha_automacao,
+    }
 
-            # 1. Acessa o Google
-            driver.get("https://www.google.com")
-            search_box = driver.find_element(By.NAME, "q")
-            search_box.send_keys(f"provedor de internet {nome_pesquisa} site oficial")
-            search_box.send_keys(Keys.ENTER)
-            time.sleep(2)
+O sistema vai juntar automaticamente todos os REGISTRYs.
+"""
 
-            # 2. Pega o primeiro link (tentativa de site oficial)
-            primeiro_link = driver.find_element(By.CSS_SELECTOR, "h3").find_element(By.XPATH, "..").get_attribute("href")
+from __future__ import annotations
 
-            # 3. Salva no módulo de Provedores
-            Provedor.objects.get_or_create(
-                nome=nome_pesquisa,
-                defaults={
-                    'url_site': primeiro_link,
-                    'cidade': row.get('cidade', 'Itaitinga'), # Padrão Itaitinga
-                    'estado': row.get('estado', 'CE')
-                }
-            )
-            
-            print(f"Sucesso: {nome_pesquisa} cadastrado com o site {primeiro_link}")
-            time.sleep(1)
+from importlib import import_module
+from pkgutil import iter_modules
+from types import ModuleType
+from typing import Callable, Dict
 
-        tarefa.status = 'concluido'
-        tarefa.save()
 
-    except Exception as e:
-        print(f"Erro: {e}")
-        tarefa = Automacao.objects.get(id=tarefa_id)
-        tarefa.status = 'falha'
-        tarefa.save()
-    
-    finally:
-        driver.quit()
+def _merge_registry(target: Dict[str, Callable], module: ModuleType) -> None:
+    reg = getattr(module, "REGISTRY", None)
+    if not isinstance(reg, dict):
+        return
 
-# Registro da nova automação
-REGISTRY = {
-    'busca_google_provedores': automacao_google_provedores,
-}
+    for slug, func in reg.items():
+        if not callable(func):
+            continue
+        # último ganha (útil pra overrides). Se preferir, troque por raise pra impedir duplicados.
+        target[slug] = func
+
+
+def load_registry() -> Dict[str, Callable]:
+    registry: Dict[str, Callable] = {}
+
+    # Ex.: automacao.tasks -> automacao.automacoes
+    pkg_name = __name__.rsplit(".", 1)[0] + ".automacoes"
+    pkg = import_module(pkg_name)
+
+    for m in iter_modules(pkg.__path__):
+        # ignora arquivos “privados” (ex.: _template.py)
+        if m.name.startswith("_"):
+            continue
+        # ignora subpacotes
+        if m.ispkg:
+            continue
+
+        mod_name = f"{pkg_name}.{m.name}"
+        try:
+            module = import_module(mod_name)
+        except Exception as e:
+            # Não derruba o sistema por uma automação quebrada
+            print(f"[AUTOMACAO] Falha ao importar {mod_name}: {e}")
+            continue
+
+        _merge_registry(registry, module)
+
+    return registry
+
+
+# Exportado para o resto do sistema (views.py usa isso)
+REGISTRY = load_registry()
